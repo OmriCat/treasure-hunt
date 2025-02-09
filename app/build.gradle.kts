@@ -4,7 +4,7 @@ plugins {
   alias(libs.plugins.kotlin.compose)
 }
 
-val javaVersion = 22
+val javaVersion = 11
 
 android {
   namespace = "com.omricat.treasurehunt"

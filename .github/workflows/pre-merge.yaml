@@ -43,11 +43,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup JDK 17
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
           java-version-file: .github/.java-version
-          distribution: 'temurin'
+          distribution: 'zulu'
 
       - name: Setup gradle
         uses: gradle/actions/setup-gradle@v4
