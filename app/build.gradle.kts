@@ -31,6 +31,9 @@ android {
     sourceCompatibility = JavaVersion.toVersion(javaVersion)
     targetCompatibility = JavaVersion.toVersion(javaVersion)
   }
+
+  sourceSets.configureEach { java.srcDir("src/${name}/kotlin") }
+
   kotlinOptions { jvmTarget = "$javaVersion" }
   buildFeatures { compose = true }
 }
