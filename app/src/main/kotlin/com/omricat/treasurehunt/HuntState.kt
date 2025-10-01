@@ -13,10 +13,22 @@ import com.omricat.treasurehunt.ClueId.WASHING_MACHINE
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class HuntState {
+sealed interface HuntState {
 
     @Serializable
-    class Round(val roundId: RoundId, val clues: Set<Clue>) : HuntState() {
+    data class BeforeRound(val roundId: RoundId) : HuntState {
+        val round: HuntState
+            get() =
+                when (roundId) {
+                    RoundId.ONE -> round1
+                    RoundId.TWO -> round2
+                    RoundId.THREE -> round3
+                    RoundId.FOUR -> round4
+                }
+    }
+
+    @Serializable
+    class Round(val roundId: RoundId, val clues: Set<Clue>) : HuntState {
 
         fun trySolveClue(id: ClueId): SolveResult {
             val clueToSolve = (clues.find { clue -> clue.clueId == id })
@@ -45,10 +57,10 @@ sealed class HuntState {
         }
     }
 
-    @Serializable object Complete : HuntState()
+    @Serializable object Complete : HuntState
 
     companion object {
-        fun init(): HuntState = round1
+        fun init(): HuntState = BeforeRound(round1.roundId)
     }
 }
 
@@ -75,9 +87,9 @@ internal val round4 = HuntState.Round(RoundId.FOUR, setOf(Clue(KITCHEN_CUPBOARD)
 
 internal fun nextRound(roundId: RoundId): HuntState =
     when (roundId) {
-        RoundId.ONE -> round2
-        RoundId.TWO -> round3
-        RoundId.THREE -> round4
+        RoundId.ONE -> HuntState.BeforeRound(round2.roundId)
+        RoundId.TWO -> HuntState.BeforeRound(round3.roundId)
+        RoundId.THREE -> HuntState.BeforeRound(round4.roundId)
         RoundId.FOUR -> HuntState.Complete
     }
 

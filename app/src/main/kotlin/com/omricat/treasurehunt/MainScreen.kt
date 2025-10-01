@@ -4,6 +4,8 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -40,6 +43,7 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -78,6 +82,8 @@ data object MainScreen : Screen {
 
     sealed interface Event : CircuitUiEvent {
         data object ClickScanQr : Event
+
+        data class ClickNextRound(val beforeRound: HuntState.BeforeRound) : Event
     }
 }
 
@@ -147,6 +153,13 @@ class MainScreenPresenter(
         return MainScreen.State(huntState = huntState, errorMessage) { event ->
             when (event) {
                 is MainScreen.Event.ClickScanQr -> resultNavigator.goTo(QrScannerAndroidScreen)
+                is MainScreen.Event.ClickNextRound ->
+                    scope.launch {
+                        dataStore.edit { preferences ->
+                            preferences[DATA_PREFERENCES_KEY] =
+                                Json.encodeToString(event.beforeRound.round)
+                        }
+                    }
             }
         }
     }
@@ -179,12 +192,106 @@ fun Main(state: MainScreen.State, modifier: Modifier = Modifier) {
     }
 
     when (state.huntState) {
+        is HuntState.BeforeRound ->
+            BeforeRound(state.huntState, modifier) {
+                state.eventSink(MainScreen.Event.ClickNextRound(state.huntState))
+            }
+
         is HuntState.Round ->
             TreasureHuntRound(state.huntState, modifier) {
                 state.eventSink(MainScreen.Event.ClickScanQr)
             }
 
         is HuntState.Complete -> Complete()
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BeforeRound(
+    beforeRound: HuntState.BeforeRound,
+    modifier: Modifier = Modifier,
+    onClickNextRound: () -> Unit,
+) {
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            CenterAlignedTopAppBar(
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.primary,
+                    ),
+                title = { Text(stringResource(R.string.app_name), maxLines = 1) },
+            )
+        },
+    ) { innerPadding ->
+        val round1Description =
+            """
+            |Welcome to your Treasure Hunt!
+            |
+            |You have to find and scan all the clues.
+            |
+            |When you've scanned all the clues for one round, you'll move onto the next.
+            |
+            |Have fun and good luck!"""
+                .trimMargin()
+
+        val round2Description =
+            """
+            |Well done!
+            |
+            |You've completed the first round.
+            |
+            |Keep going!
+            |
+            |I wonder how many rounds there are..."""
+                .trimMargin()
+
+        val round3Description =
+            """
+            |Another round complete!
+            |
+            |Surely you must be near the end 
+            |of your quest now!"""
+                .trimMargin()
+
+        val round4Description =
+            """
+            |Amazing!
+            |
+            |You're nearly finished. 
+            |There's only clue left to find.
+            |
+            |I hope there's some 
+            |amazing treasure at the end!"""
+                .trimMargin()
+
+        val (description, buttonText) =
+            when (beforeRound.roundId) {
+                RoundId.ONE -> round1Description to "Let's Go!"
+                RoundId.TWO -> round2Description to "Next Round"
+                RoundId.THREE -> round3Description to "On To Round 3"
+                RoundId.FOUR -> round4Description to "Last One!"
+            }
+
+        Column(
+            modifier = modifier.padding(innerPadding).fillMaxSize().padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = description,
+                modifier = modifier.fillMaxHeight(0.8f),
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
+            )
+            Button(
+                onClick = onClickNextRound,
+                modifier = modifier.defaultMinSize(minWidth = 160.dp),
+            ) {
+                Text(buttonText)
+            }
+        }
     }
 }
 
@@ -228,7 +335,7 @@ fun TreasureHuntRound(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.primary,
                     ),
-                title = { Text("Treasure Hunt", maxLines = 1) },
+                title = { Text(stringResource(R.string.app_name), maxLines = 1) },
                 actions = { IconButton(onClick = onActionClick) { ScanIcon() } },
                 scrollBehavior = scrollBehavior,
             )
@@ -324,18 +431,24 @@ fun ClueId.getDrawable(): Int =
         ClueId.LANDING_CUPBOARD -> R.drawable.landing_cupboard
     }
 
-@Preview(showBackground = true, device = "id:pixel_5")
-@Composable
-fun TreasureHuntPreview() {
-    val round =
-        (round1.trySolveClue(ClueId.WASHING_MACHINE).nextHuntStateState as HuntState.Round)
-            .trySolveClue(ClueId.BIKE_SHED)
-            .nextHuntStateState as HuntState.Round
-    TreasureHuntTheme { TreasureHuntRound(round, onActionClick = {}) }
-}
+// @Preview(showBackground = true, device = "id:pixel_8")
+// @Composable
+// fun TreasureHuntPreview() {
+//    val round =
+//        (round1.trySolveClue(ClueId.WASHING_MACHINE).nextHuntStateState as HuntState.Round)
+//            .trySolveClue(ClueId.BIKE_SHED)
+//            .nextHuntStateState as HuntState.Round
+//    TreasureHuntTheme { TreasureHuntRound(round, onActionClick = {}) }
+// }
+//
+// @Preview(showBackground = true, device = "id:pixel_8")
+// @Composable
+// fun CompletePreview() {
+//    TreasureHuntTheme { Complete() }
+// }
 
-@Preview(showBackground = true, device = "id:pixel_5")
+@Preview(showBackground = true, device = "id:pixel_8")
 @Composable
-fun CompletePreview() {
-    TreasureHuntTheme { Complete() }
+fun BeforeRoundPreview() {
+    TreasureHuntTheme { BeforeRound(HuntState.BeforeRound(round4.roundId), onClickNextRound = {}) }
 }
