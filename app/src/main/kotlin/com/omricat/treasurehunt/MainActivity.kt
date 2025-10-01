@@ -4,44 +4,33 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.omricat.treasurehunt.ui.theme.TreasureHuntTheme
+import com.slack.circuit.backstack.rememberSaveableBackStack
+import com.slack.circuit.foundation.Circuit
+import com.slack.circuit.foundation.CircuitCompositionLocals
+import com.slack.circuit.foundation.NavigableCircuitContent
+import com.slack.circuit.foundation.rememberCircuitNavigator
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val dataStore = TreasureHuntApp.fromContext(this).dataStore
+
+        val circuit =
+            Circuit.Builder()
+                .addPresenterFactory(MainScreenPresenter.Factory(dataStore, this))
+                .addUi<MainScreen, MainScreen.State> { state, modifier -> Main(state, modifier) }
+                .build()
+
         setContent {
+            val backStack = rememberSaveableBackStack(root = MainScreen)
+            val navigator = rememberCircuitNavigator(backStack)
             TreasureHuntTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                CircuitCompositionLocals(circuit) { NavigableCircuitContent(navigator, backStack) }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TreasureHuntTheme {
-        Greeting("Android")
     }
 }
