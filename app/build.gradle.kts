@@ -12,8 +12,7 @@ val javaVersion = 11
 
 android {
     namespace = "com.omricat.treasurehunt"
-    compileSdk = 36
-
+    compileSdk = libs.versions.compileSdk.get().toInt()
     defaultConfig {
         applicationId = "com.omricat.treasurehunt"
         minSdk = 24
