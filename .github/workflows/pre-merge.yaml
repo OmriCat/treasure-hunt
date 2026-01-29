@@ -17,7 +17,7 @@ jobs:
       - name: Checkout latest
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - name: Validate gradle wrapper
-        uses: gradle/actions/wrapper-validation@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # v5
+        uses: gradle/actions/wrapper-validation@f29f5a9d7b09a7c6b29859002d29d24e1674c884 # v5
 
   build:
     runs-on: ubuntu-latest
@@ -31,7 +31,7 @@ jobs:
           distribution: 'zulu'
 
       - name: Setup gradle
-        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # v5
+        uses: gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884 # v5
 
       - name: Assemble all variants
         run: ./gradlew app:assemble --continue
@@ -50,7 +50,7 @@ jobs:
           distribution: 'zulu'
 
       - name: Setup gradle
-        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 # v5
+        uses: gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884 # v5
 
       - name: Run local tests
         run: ./gradlew test --continue --stacktrace
