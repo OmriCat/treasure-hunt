@@ -15,7 +15,7 @@ composeBom = "2026.05.01"
 gradleDoctor = "0.12.1"
 datastorePreferences = "1.2.1"
 kotlinxSerialization = "1.11.0"
-circuit = "0.33.1"
+circuit = "0.34.0"
 qrCodeScanner = "16.1.0"
 
 [libraries]
